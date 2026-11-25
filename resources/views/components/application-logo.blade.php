@@ -1,0 +1,1 @@
+<img src="{{ asset('img/logo.png') }}" alt="Logo SMP Negeri 01 Namrole" {{ $attributes->merge(['class' => 'object-contain']) }}>
