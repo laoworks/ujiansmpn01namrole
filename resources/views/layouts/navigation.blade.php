@@ -46,8 +46,6 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        
-
                         <form method="POST" action="{{ route('logout') }}" class="px-2 py-1">
                             @csrf
                             <button type="submit"
@@ -75,7 +73,7 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
+    <!-- Responsive Navigation Menu (melayang, tidak mendorong halaman) -->
     <div id="mobile-menu"
          x-show="open"
          x-cloak
@@ -86,7 +84,7 @@
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 -translate-y-2"
          @click.outside="open = false"
-         class="sm:hidden border-t border-gray-100 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+         class="sm:hidden absolute inset-x-0 top-full z-50 bg-white border-t border-gray-100 border-b border-gray-200 shadow-lg max-h-[calc(100dvh-3.5rem)] overflow-y-auto">
 
         <div class="pt-3 pb-3 px-4">
             <a href="{{ route('dashboard') }}"
@@ -106,8 +104,6 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                
-
                 <form method="POST" action="{{ route('logout') }}" class="px-4 py-1">
                     @csrf
                     <button type="submit"
