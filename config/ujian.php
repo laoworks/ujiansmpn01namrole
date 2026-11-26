@@ -5,8 +5,8 @@ return [
     // WAJIB true saat ujian sungguhan.
     'penjaga' => env('UJIAN_PENJAGA', true),
 
-    // Izinkan siswa membuka ujian lewat Google Chrome (browser biasa)
-    'izinkan_browser' => (bool) env('UJIAN_IZINKAN_BROWSER', false),
+    // Izinkan siswa membuka ujian lewat Google Chrome (desktop dan HP)
+    'izinkan_browser' => (bool) env('UJIAN_IZINKAN_BROWSER', true),
 
     // Batas pelanggaran yang dihitung sebelum ujian otomatis selesai
     'batas_app' => (int) env('UJIAN_BATAS_APP', 1),          // Aplikasi Android dan SEB

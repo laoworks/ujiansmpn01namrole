@@ -57,19 +57,26 @@ class PenjagaPerangkat
         $config = self::cocok($url, $request->header('X-SafeExamBrowser-ConfigKeyHash'), config('ujian.seb_config_key'));
         $bek = self::cocok($url, $request->header('X-SafeExamBrowser-RequestHash'), config('ujian.seb_exam_key'));
 
-        // Chrome asli (desktop, Android, iOS/CriOS).
-        // Dikecualikan: Edge, Opera, Samsung Browser, serta aplikasi ujian dan SEB yang gagal
-        // verifikasi kunci (user-agent mereka juga memuat "Chrome/"), dan WebView Android ("; wv)").
-        $miripChrome = (bool) preg_match('/(Chrome|CriOS)\//', $ua)
-            && ! preg_match('/(Edg|EdgA|EdgiOS|OPR|Opera|SamsungBrowser|UjianApp|SEB)\//', $ua)
-            && ! str_contains($ua, '; wv)');
+        // Aplikasi ujian dan SEB yang gagal verifikasi kunci tidak boleh lolos sebagai browser biasa.
+        $menyamarApp = (bool) preg_match('/(UjianApp|SEB)\//', $ua);
+
+        // Semua HP/tablet: Android, iPhone, iPad, iPod, HarmonyOS, dan browser apa pun di dalamnya
+        // (Chrome, Samsung Internet, Firefox, Edge, Opera, UC, Via, WebView, dll).
+        $seluler = (bool) preg_match('/(Android|iPhone|iPad|iPod|Mobile|HarmonyOS|Windows Phone)/i', $ua);
+
+        // Chrome asli di desktop/laptop (Windows, macOS, Linux, ChromeOS)
+        $chromeDesktop = (bool) preg_match('/(Chrome|CriOS)\//', $ua)
+            && ! preg_match('/(Edg|EdgA|EdgiOS|OPR|Opera|SamsungBrowser)\//', $ua);
+
+        $mirip = ! $menyamarApp && ($seluler || $chromeDesktop);
 
         $izinkan = (bool) config('ujian.izinkan_browser');
 
         $browser = [
             'diizinkan' => $izinkan,
-            'mirip' => $miripChrome,
-            'sah' => $izinkan && $miripChrome,
+            'seluler' => $seluler,
+            'mirip' => $mirip,
+            'sah' => $izinkan && $mirip,
         ];
 
         $jenis = null;
@@ -82,7 +89,7 @@ class PenjagaPerangkat
             $jenis = 'Safe Exam Browser';
             $kode = 'seb';
         } elseif ($browser['sah']) {
-            $jenis = 'Google Chrome';
+            $jenis = $seluler ? 'Browser HP' : 'Google Chrome';
             $kode = 'browser';
         }
 
