@@ -311,6 +311,28 @@
         const csrf = () => document.querySelector('meta[name=csrf-token]').content;
         const objek = (v) => (v && !Array.isArray(v) ? v : {});
 
+        // Menjaga layar tetap menyala (Screen Wake Lock API).
+        // Disimpan di variabel biasa, bukan di state Alpine, karena objek bawaan browser
+        // tidak boleh dibungkus proxy reaktif.
+        let kunciLayar = null;
+
+        const nyalakanLayar = async () => {
+            if (!('wakeLock' in navigator) || document.hidden) return;
+            if (kunciLayar && !kunciLayar.released) return;
+            try {
+                kunciLayar = await navigator.wakeLock.request('screen');
+                kunciLayar.addEventListener('release', () => { kunciLayar = null; });
+            } catch (e) {
+                kunciLayar = null; // ditolak (mis. baterai hemat); dicoba lagi saat layar disentuh
+            }
+        };
+
+        const lepasLayar = async () => {
+            const k = kunciLayar;
+            kunciLayar = null;
+            if (k) { try { await k.release(); } catch (e) {} }
+        };
+
         return {
             ...antiCurang(init),
 
@@ -339,10 +361,26 @@
 
             mulai() {
                 this.jagaUjian();
+                this.jagaLayar();
                 this.akhir = Date.now() + this.sisa * 1000;
                 this.tick();
                 setInterval(() => this.tick(), 1000);
                 setInterval(() => this.ulangiTertunda(), 5000);
+            },
+
+            // Layar tidak mati sampai ujian selesai.
+            // Kunci dilepas otomatis oleh browser bila tab disembunyikan, jadi diminta lagi saat kembali.
+            // Sentuhan pertama juga mencoba lagi, untuk browser yang menolak permintaan tanpa interaksi.
+            jagaLayar() {
+                nyalakanLayar();
+
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && !this.menutup) nyalakanLayar();
+                });
+
+                ['pointerdown', 'keydown'].forEach((n) => document.addEventListener(n, () => {
+                    if (!this.menutup) nyalakanLayar();
+                }, { passive: true }));
             },
 
             tick() {
@@ -355,6 +393,7 @@
 
                 if (this.sisa <= 0 && !this.menutup) {
                     this.menutup = true;
+                    lepasLayar();
                     document.getElementById('form-kirim').submit();
                 }
             },
@@ -450,6 +489,7 @@
 
                 const kirimSekarang = () => {
                     this.menutup = true;
+                    lepasLayar();
                     document.getElementById('form-kirim').submit();
                 };
 
