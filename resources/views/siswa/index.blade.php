@@ -16,9 +16,12 @@
         if ($b->has('ttd')) { $pesanError = ['Tanda tangan belum tersimpan', $b->first('ttd')]; break; }
     }
 
-    // Sembunyikan ujian yang terlewat (belum dikerjakan dan waktunya sudah habis).
+    // Ujian hanya tampil saat waktunya sudah masuk dan belum habis.
+    // Sebelum mulai_at ujian tidak muncul sama sekali; setelah selesai_at juga hilang.
     // Ujian yang sudah punya sesi tetap tampil, dan yang selesai masuk ke Riwayat.
-    $ujian = $ujian->filter(fn ($u) => $sesi->get($u->id) || now()->lte($u->selesai_at))->values();
+    $ujian = $ujian->filter(fn ($u) => $sesi->get($u->id)
+        || (now()->gte($u->mulai_at) && now()->lte($u->selesai_at))
+    )->values();
 
     // Ikon tombol (outline, ukuran sama)
     $ikon = 'w-5 h-5 shrink-0';
@@ -59,8 +62,8 @@
                     $s = $sesi->get($u->id);
                     $berlangsung = $s && $s->status === 'berlangsung';
                     $lanjut = $lanjutIds->contains($u->id);
-                    $belum = ! $s && now()->lt($u->mulai_at);
-                    $bisaMulai = ! $s && ! $belum;
+                    // Ujian yang tampil di sini pasti sudah masuk waktunya (lihat filter di atas)
+                    $bisaMulai = ! $s;
                     $sudahTtd = filled($ttd->get($u->id));
                     $bolehToken = $berlangsung || $sudahTtd || ! $wajibTtd;
                     $hariSama = $u->mulai_at->isSameDay($u->selesai_at);
@@ -75,13 +78,9 @@
                                 <p class="text-sm text-gray-500">{{ $u->mapel?->nama ?? '-' }}</p>
                             </div>
 
-                            <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap
-                                {{ $belum ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700' }}">
-                                <span class="w-1.5 h-1.5 rounded-full {{ $belum ? 'bg-blue-500' : 'bg-green-500' }}"></span>
-                                @if ($berlangsung) Berlangsung
-                                @elseif ($belum) Belum buka
-                                @else Dibuka
-                                @endif
+                            <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap bg-green-50 text-green-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                {{ $berlangsung ? 'Berlangsung' : 'Dibuka' }}
                             </span>
                         </div>
 
@@ -95,21 +94,7 @@
                         </p>
                     </div>
 
-                    {{-- Belum waktunya: tanda tangan dan kode ujian disembunyikan --}}
-                    @if ($belum)
-                        <div class="px-4 py-4 border-t border-gray-100 bg-gray-50">
-                            <p class="text-sm text-gray-500">
-                                Tanda tangan dan kode ujian muncul saat ujian dibuka
-                                @if ($u->mulai_at->isToday())
-                                    pukul {{ $u->mulai_at->format('H:i') }}.
-                                @else
-                                    pada {{ $u->mulai_at->format('d M, H:i') }}.
-                                @endif
-                            </p>
-                        </div>
-                    @endif
-
-                    {{-- Tanda tangan kehadiran (hanya setelah ujian dibuka) --}}
+                    {{-- Tanda tangan kehadiran --}}
                     @if ($bisaMulai)
                         @if ($sudahTtd)
                             {{-- Sudah tanda tangan: ringkas, bisa diganti --}}
