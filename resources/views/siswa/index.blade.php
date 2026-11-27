@@ -95,8 +95,22 @@
                         </p>
                     </div>
 
-                    {{-- Tanda tangan kehadiran --}}
-                    @if (! $s)
+                    {{-- Belum waktunya: tanda tangan dan kode ujian disembunyikan --}}
+                    @if ($belum)
+                        <div class="px-4 py-4 border-t border-gray-100 bg-gray-50">
+                            <p class="text-sm text-gray-500">
+                                Tanda tangan dan kode ujian muncul saat ujian dibuka
+                                @if ($u->mulai_at->isToday())
+                                    pukul {{ $u->mulai_at->format('H:i') }}.
+                                @else
+                                    pada {{ $u->mulai_at->format('d M, H:i') }}.
+                                @endif
+                            </p>
+                        </div>
+                    @endif
+
+                    {{-- Tanda tangan kehadiran (hanya setelah ujian dibuka) --}}
+                    @if ($bisaMulai)
                         @if ($sudahTtd)
                             {{-- Sudah tanda tangan: ringkas, bisa diganti --}}
                             <details class="group border-t border-gray-100">
